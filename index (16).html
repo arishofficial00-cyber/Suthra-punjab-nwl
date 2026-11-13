@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ستھرا پنجاب - وریفائیڈ GPS و کیمرہ پورٹل</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { urdu: ['"Noto Nastaliq Urdu"', 'serif'], sans: ['Inter', 'sans-serif'] },
+                    colors: { punjab: { green: '#006837', light: '#e8f5e9', dark: '#004021', accent: '#f58220' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', 'Noto Nastaliq Urdu', sans-serif; background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col justify-between text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-punjab-green text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="bg-white p-2 rounded-full shadow text-punjab-green">
+                    <i class="fa-solid fa-users-gear text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg md:text-xl leading-tight">ستھرا پنجاب (2 میٹر وریفکیشن)</h1>
+                    <p class="text-[11px] text-green-200">محمد عرفان - بلدیاتی نظام (نارووال)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="btnOpenDriveSetup" class="bg-punjab-accent hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-gear"></i> گوگل ڈرائیو سیٹ اپ
+                </button>
+                <div id="gpsBadge" class="flex items-center space-x-2 space-x-reverse bg-yellow-600 px-3 py-1.5 rounded-full text-xs font-semibold text-white">
+                    <span id="gpsBadgeDot" class="w-2.5 h-2.5 rounded-full bg-white inline-block"></span>
+                    <span id="gpsStatusText">GPS تیار ہے</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto w-full px-4 py-5 flex-grow space-y-5">
+
+        <!-- Role Selector Switcher -->
+        <section class="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
+            <h2 class="font-bold text-gray-700 text-xs mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-user-check text-punjab-green"></i> اپنا رول (Role) منتخب کریں:
+            </h2>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="roleInspectorBtn" class="py-3 px-4 rounded-xl border-2 font-bold text-xs md:text-sm flex items-center justify-center gap-2 transition border-blue-600 bg-blue-50 text-blue-800 shadow-sm">
+                    <i class="fa-solid fa-user-ninja text-lg"></i>
+                    <div class="text-right">
+                        <div class="font-bold">1. انسپکٹر (User 1)</div>
+                        <div class="text-[10px] opacity-80 font-normal">قبل صفائی تصویر اور کوڈ بنائیں</div>
+                    </div>
+                </button>
+                <button id="roleWorkerBtn" class="py-3 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs md:text-sm flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-broom text-lg"></i>
+                    <div class="text-right">
+                        <div class="font-bold">2. صفائی عملہ (User 2)</div>
+                        <div class="text-[10px] opacity-80 font-normal">2 میٹر کے اندر جا کر تصویر کھینچیں</div>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- User Information Form -->
+        <section class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 space-y-3">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h2 id="roleTitleHeader" class="font-bold text-gray-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-id-card text-blue-600"></i> انسپکٹر معلومات (User 1 Information)
+                </h2>
+                <span id="currentRoleBadge" class="bg-blue-600 text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold">یوزر 1 موڈ</span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label id="lblUserName" class="block text-xs font-bold text-gray-600 mb-1">نام:</label>
+                    <input type="text" id="inputUserName" value="محمد عرفان" class="w-full text-xs p-2.5 border rounded-lg focus:ring-2 focus:ring-punjab-green outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">یونین کونسل / وارڈ نمبر:</label>
+                    <input type="text" id="inputWard" placeholder="مثلاً: UC-14 / Ward 2" class="w-full text-xs p-2.5 border rounded-lg focus:ring-2 focus:ring-punjab-green outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">سائٹ کا پتہ / گلی کا نام:</label>
+                    <input type="text" id="inputSiteNotes" placeholder="مثلاً: مین بازار نزد جامع مسجد" class="w-full text-xs p-2.5 border rounded-lg focus:ring-2 focus:ring-punjab-green outline-none">
+                </div>
+            </div>
+        </section>
+
+        <!-- Task Selector (Only visible for User 2 / Worker Mode) -->
+        <section id="workerTaskSelectorSection" class="hidden bg-yellow-50 rounded-2xl shadow-sm border border-yellow-300 p-4 space-y-3">
+            <div class="flex justify-between items-center border-b border-yellow-200 pb-2">
+                <h2 class="font-bold text-yellow-900 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-yellow-700"></i> زیرِ التواء ٹاسک منتخب کریں (Pending Tasks)
+                </h2>
+                <button id="btnRefreshTasks" class="text-xs bg-yellow-200 hover:bg-yellow-300 text-yellow-900 px-2.5 py-1 rounded-lg font-bold transition">
+                    لسٹ ریفریش کریں
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-yellow-800 mb-1">اوپن ٹاسک کوڈ منتخب کریں:</label>
+                    <select id="selectPendingTask" class="w-full text-xs p-2.5 border rounded-lg bg-white font-mono font-bold">
+                        <option value="">-- کوئی ٹاسک منتخب نہیں ہے --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-yellow-800 mb-1">مینول ٹاسک کوڈ درج کریں:</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="inputManualTaskCode" placeholder="مثلاً: SP-4982" class="w-full text-xs p-2.5 border rounded-lg uppercase font-mono bg-white">
+                        <button id="btnLoadManualTask" class="bg-yellow-700 hover:bg-yellow-800 text-white text-xs px-3 py-2 rounded-lg font-bold">لوڈ کریں</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="activeTaskDetailsBox" class="hidden bg-white rounded-xl p-3 border border-yellow-200 space-y-2 text-xs">
+                <div class="flex justify-between items-center text-gray-700 font-bold border-b pb-1">
+                    <span id="activeTaskIdTag" class="text-blue-600 font-mono text-sm">ٹاسک ID: --</span>
+                    <span id="activeTaskInspectorTag" class="text-gray-500">انسپکٹر: --</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-gray-600 text-[11px]">
+                    <div><strong>پتہ:</strong> <span id="activeTaskLocationTag">--</span></div>
+                    <div><strong>User 1 GPS:</strong> <span id="activeTaskGPSTag" class="font-mono">--</span></div>
+                </div>
+                <div class="flex items-center gap-3 pt-1">
+                    <img id="activeTaskBeforeThumb" class="w-16 h-12 object-cover rounded shadow border" alt="Before">
+                    <div class="text-[11px] text-gray-500">
+                        <p class="font-bold text-gray-700">User 1 کی 'قبل صفائی' تصویر</p>
+                        <p id="activeTaskTimeTag">وقت: --</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live GPS Telemetry Grid -->
+        <section class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 space-y-3">
+            <div class="flex flex-wrap justify-between items-center border-b pb-3 gap-2">
+                <div class="flex items-center gap-2 text-punjab-green font-bold text-sm">
+                    <i class="fa-solid fa-location-crosshairs text-lg"></i>
+                    <h2>آپ کی لائیو لوکیشن (GPS Telemetry)</h2>
+                </div>
+                <button id="btnRefreshGPS" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition">
+                    <i class="fa-solid fa-arrows-rotate"></i> GPS ریفریش کریں
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                <div class="p-2 bg-gray-50 rounded-xl border">
+                    <span class="text-[11px] text-gray-500 block">عرض بلد (Latitude)</span>
+                    <span id="displayLat" class="font-mono font-bold text-xs md:text-sm text-gray-800">--.------</span>
+                </div>
+                <div class="p-2 bg-gray-50 rounded-xl border">
+                    <span class="text-[11px] text-gray-500 block">طول بلد (Longitude)</span>
+                    <span id="displayLng" class="font-mono font-bold text-xs md:text-sm text-gray-800">--.------</span>
+                </div>
+                <div class="p-2 bg-gray-50 rounded-xl border">
+                    <span class="text-[11px] text-gray-500 block">درستگی (Accuracy)</span>
+                    <span id="displayAcc" class="font-mono font-bold text-xs md:text-sm text-gray-800">-- میٹر</span>
+                </div>
+                <div class="p-2 bg-gray-50 rounded-xl border">
+                    <span class="text-[11px] text-gray-500 block">اصل جگہ سے فاصلہ</span>
+                    <span id="displayDistance" class="font-mono font-bold text-xs md:text-sm text-blue-600">-- میٹر</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alert Box -->
+        <div id="alertBox" class="hidden rounded-xl p-4 text-sm font-semibold shadow-md transition-all duration-300">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <i id="alertIcon" class="fa-solid fa-circle-info text-xl"></i>
+                <span id="alertMessage"></span>
+            </div>
+        </div>
+
+        <!-- Proximity Warning -->
+        <div id="proximityLockWarning" class="hidden bg-red-100 border-2 border-red-500 text-red-900 rounded-2xl p-4 shadow-md text-center space-y-2">
+            <div class="flex items-center justify-center gap-2 text-lg font-bold">
+                <i class="fa-solid fa-lock text-red-600 animate-bounce"></i>
+                <span>کیمرہ لاک ہے: آپ 2 میٹر کی حد سے باہر ہیں!</span>
+            </div>
+            <p class="text-xs">آپ اصلی جگہ سے <strong id="currentDistText" class="text-red-700 text-base font-mono">--</strong> میٹر دور ہیں۔ 2 میٹر کے اندر آئیں!</p>
+        </div>
+
+        <!-- Camera Viewport & Capture Controls -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div class="lg:col-span-7 bg-white p-4 rounded-2xl shadow-md border border-gray-200 flex flex-col justify-between">
+                <div>
+                    <h2 class="font-bold text-gray-700 text-base mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-camera text-punjab-green"></i> کیمرہ کیپچر
+                    </h2>
+
+                    <div class="bg-gray-50 border-2 border-dashed border-punjab-green rounded-2xl p-6 text-center space-y-4">
+                        <div class="w-16 h-16 bg-green-100 text-punjab-green rounded-full flex items-center justify-center mx-auto text-2xl">
+                            <i class="fa-solid fa-camera-retro"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-sm">موبایل کا اصل کیمرہ کھولیں</h3>
+                            <p class="text-[11px] text-gray-500">تصویر پر آپ کی GPS لوکیشن خود بخود واٹر مارک ہو جائے گی۔</p>
+                        </div>
+
+                        <!-- User 1 Capture -->
+                        <div id="inspectorCaptureWrapper">
+                            <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow inline-flex items-center gap-2 text-xs transition">
+                                <i class="fa-solid fa-camera"></i> تصویر (User 1 - قبل صفائی) کھینچیں
+                                <input type="file" id="inspectorFileCapture" accept="image/*" capture="environment" class="hidden">
+                            </label>
+                        </div>
+
+                        <!-- User 2 Capture -->
+                        <div id="workerCaptureWrapper" class="hidden">
+                            <button id="btnWorkerCaptureTrigger" disabled class="cursor-not-allowed bg-gray-300 text-gray-500 font-bold py-3 px-6 rounded-xl shadow inline-flex items-center gap-2 text-xs">
+                                <i class="fa-solid fa-lock"></i> تصویر (User 2 - بعد صفائی) کھینچیں
+                            </button>
+                            <input type="file" id="workerFileCapture" accept="image/*" capture="environment" class="hidden">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cameraProximityBadge" class="hidden mt-3 bg-black/80 text-white text-xs px-3 py-2 rounded-xl flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <span id="proxIndicatorDot" class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                        <span id="proxIndicatorText">فاصلہ: --</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Preview Cards -->
+            <div class="lg:col-span-5 space-y-4">
+                <div class="bg-white p-4 rounded-2xl shadow-md border border-gray-200">
+                    <h3 class="font-bold text-xs text-blue-700 mb-2">User 1 تصویر (قبل صفائی)</h3>
+                    <div id="inspectorImgContainer" class="bg-gray-100 rounded-xl h-44 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 relative overflow-hidden">
+                        <span class="text-xs text-gray-500">ابھی تک تصویر نہیں لی گئی</span>
+                    </div>
+                    <div id="generatedTaskBox" class="hidden mt-3 p-3 bg-blue-50 border rounded-xl space-y-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-blue-900 font-bold">ٹاسک کوڈ:</span>
+                            <span id="lblGeneratedCode" class="font-mono font-bold text-sm text-blue-700 bg-white px-2 py-0.5 rounded">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-md border border-gray-200">
+                    <h3 class="font-bold text-xs text-green-700 mb-2">User 2 تصویر (بعد صفائی)</h3>
+                    <div id="workerImgContainer" class="bg-gray-100 rounded-xl h-44 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 relative overflow-hidden">
+                        <span class="text-xs text-gray-500">2 میٹر کی حد میں تصویر لی جائے گی</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Logs Table -->
+        <section class="bg-white rounded-2xl shadow-md border border-gray-200 p-4 space-y-3">
+            <div class="flex flex-wrap justify-between items-center border-b pb-3 gap-2">
+                <div>
+                    <h2 class="font-bold text-gray-800 text-base">محفوظ شدہ وریفکیشن ہسٹری</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btnExportCSV" class="bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg font-bold">اكسل رپورٹ (CSV)</button>
+                    <button id="btnClearHistory" class="bg-red-50 text-red-600 border text-xs px-3 py-1.5 rounded-lg font-bold">ڈیٹا صاف کریں</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-xs">
+                    <thead class="bg-gray-50 text-gray-600 font-bold border-b">
+                        <tr>
+                            <th class="p-2.5">ٹاسک ID</th>
+                            <th class="p-2.5">انسپکٹر</th>
+                            <th class="p-2.5">عملہ</th>
+                            <th class="p-2.5">وارڈ / پتہ</th>
+                            <th class="p-2.5 text-center">فاصلہ</th>
+                            <th class="p-2.5 text-center">قبل تصویر</th>
+                            <th class="p-2.5 text-center">بعد تصویر</th>
+                            <th class="p-2.5 text-center">سٹیٹس</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody" class="divide-y divide-gray-100">
+                        <tr><td colspan="8" class="text-center py-6 text-gray-400">کوئی ریکارڈ نہیں ملا</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Google Apps Script Modal -->
+    <div id="driveSetupModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 text-right shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-gray-800 text-lg">گوگل ڈرائیو سیٹ اپ</h3>
+                <button id="btnCloseDriveSetup" class="text-gray-500 font-bold">✕</button>
+            </div>
+            <input type="url" id="inputDriveApiUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs p-3 border rounded-xl font-mono">
+            <button id="btnSaveDriveSetup" class="bg-punjab-green text-white text-xs px-5 py-2.5 rounded-xl font-bold">سیو کریں</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-punjab-dark text-white text-center py-4 border-t-4 border-punjab-accent mt-8">
+        <p class="text-xs">ستھرا پنجاب بلدیاتی صفائی وریفکیشن پورٹل</p>
+        <p class="text-[11px] text-green-300">ڈیولپر اینڈ ٹیکنیکل کریڈٹ: <span class="font-bold text-white">محمد عرفان (03008468121)</span></p>
+    </footer>
+
+    <!-- Script Engine -->
+    <script>
+        const STATE = {
+            role: 'inspector',
+            currentLat: null,
+            currentLng: null,
+            accuracy: null,
+            driveScriptUrl: localStorage.getItem('sp_drive_script_url') || '',
+            activeTask: null,
+            currentDistance: null,
+            tasks: JSON.parse(localStorage.getItem('sp_tasks_db')) || []
+        };
+
+        const MAX_ALLOWED_DISTANCE_METERS = 2.0;
+
+        // ایپ کھلتے ہی GPS خود بخود شروع
+        window.addEventListener('load', () => {
+            fetchRealMobileGPS();
+            renderPendingTasksDropdown();
+            renderTableLogs();
+            if (STATE.driveScriptUrl) {
+                document.getElementById('inputDriveApiUrl').value = STATE.driveScriptUrl;
+            }
+        });
+
+        // دوبارہ ایپ پر واپس آنے پر (مثلاً کیمرہ بند ہونے کے بعد) GPS دوبارہ چالو
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') fetchRealMobileGPS();
+        });
+
+        // ---------- لائیو GPS (watchPosition) ----------
+        let gpsWatchId = null;
+
+        function applyPosition(pos) {
+            STATE.currentLat = pos.coords.latitude;
+            STATE.currentLng = pos.coords.longitude;
+            STATE.accuracy = Math.round(pos.coords.accuracy || 0);
+
+            document.getElementById('displayLat').textContent = STATE.currentLat.toFixed(6);
+            document.getElementById('displayLng').textContent = STATE.currentLng.toFixed(6);
+            document.getElementById('displayAcc').textContent = `${STATE.accuracy} میٹر`;
+            document.getElementById('gpsBadgeDot').className = "w-2.5 h-2.5 rounded-full bg-green-400 inline-block";
+            document.getElementById('gpsStatusText').textContent = `GPS فعال (${STATE.accuracy}m)`;
+            updateDistanceAndLockStatus();
+        }
+
+        function onGpsError(err) {
+            let msg = "GPS سگنل نہیں ملا۔ براہ کرم لوکیشن آن کریں۔";
+            if (err.code === 1) {
+                msg = "لوکیشن کی اجازت بند ہے۔ براؤزر سیٹنگ میں Location کو Allow کریں اور پیج ریفریش کریں۔";
+                document.getElementById('gpsStatusText').textContent = "GPS اجازت نہیں";
+            } else if (err.code === 3) {
+                msg = "GPS سگنل سست ہے، کھلی جگہ پر آئیں۔ تلاش جاری ہے...";
+                document.getElementById('gpsStatusText').textContent = "GPS تلاش جاری...";
+            } else {
+                document.getElementById('gpsStatusText').textContent = "GPS فیل!";
+            }
+            showAlert("error", msg);
+        }
+
+        function fetchRealMobileGPS() {
+            if (!navigator.geolocation) {
+                showAlert("error", "آپ کا براؤزر GPS سپورٹ نہیں کرتا!");
+                return;
+            }
+            if (!window.isSecureContext) {
+                showAlert("error", "GPS صرف https لنک پر چلتا ہے۔ ایپ کو https لنک سے کھولیں۔");
+            }
+
+            document.getElementById('gpsStatusText').textContent = "GPS تلاش جاری ہے...";
+
+            if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+
+            // فوری پہلی لوکیشن (نیٹ ورک / کیش سے)
+            navigator.geolocation.getCurrentPosition(applyPosition, () => {}, {
+                enableHighAccuracy: false, timeout: 5000, maximumAge: 60000
+            });
+
+            // مسلسل لائیو GPS (اعلیٰ درستگی)
+            gpsWatchId = navigator.geolocation.watchPosition(applyPosition, onGpsError, {
+                enableHighAccuracy: true, timeout: 20000, maximumAge: 0
+            });
+        }
+
+        document.getElementById('btnRefreshGPS').addEventListener('click', fetchRealMobileGPS);
+
+        // Role Switcher
+        document.getElementById('roleInspectorBtn').addEventListener('click', () => setRole('inspector'));
+        document.getElementById('roleWorkerBtn').addEventListener('click', () => setRole('worker'));
+
+        function setRole(role) {
+            STATE.role = role;
+            if (role === 'inspector') {
+                document.getElementById('roleInspectorBtn').className = "py-3 px-4 rounded-xl border-2 font-bold text-xs md:text-sm flex items-center justify-center gap-2 transition border-blue-600 bg-blue-50 text-blue-800 shadow-sm";
+                document.getElementById('roleWorkerBtn').className = "py-3 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs md:text-sm flex items-center justify-center gap-2 transition";
+                document.getElementById('roleTitleHeader').innerHTML = `<i class="fa-solid fa-id-card text-blue-600"></i> انسپکٹر معلومات (User 1 Information)`;
+                document.getElementById('currentRoleBadge').className = "bg-blue-600 text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold";
+                document.getElementById('currentRoleBadge').textContent = "یوزر 1 موڈ";
+                document.getElementById('workerTaskSelectorSection').classList.add('hidden');
+                document.getElementById('inspectorCaptureWrapper').classList.remove('hidden');
+                document.getElementById('workerCaptureWrapper').classList.add('hidden');
+                document.getElementById('proximityLockWarning').classList.add('hidden');
+                document.getElementById('cameraProximityBadge').classList.add('hidden');
+                STATE.activeTask = null;
+            } else {
+                document.getElementById('roleWorkerBtn').className = "py-3 px-4 rounded-xl border-2 font-bold text-xs md:text-sm flex items-center justify-center gap-2 transition border-punjab-green bg-green-50 text-punjab-green shadow-sm";
+                document.getElementById('roleInspectorBtn').className = "py-3 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs md:text-sm flex items-center justify-center gap-2 transition";
+                document.getElementById('roleTitleHeader').innerHTML = `<i class="fa-solid fa-id-card text-green-600"></i> صفائی عملہ معلومات (User 2 Information)`;
+                document.getElementById('currentRoleBadge').className = "bg-punjab-green text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold";
+                document.getElementById('currentRoleBadge').textContent = "یوزر 2 موڈ";
+                document.getElementById('workerTaskSelectorSection').classList.remove('hidden');
+                document.getElementById('inspectorCaptureWrapper').classList.add('hidden');
+                document.getElementById('workerCaptureWrapper').classList.remove('hidden');
+                renderPendingTasksDropdown();
+            }
+            updateDistanceAndLockStatus();
+        }
+
+        // Haversine Distance
+        function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+        }
+
+        function updateDistanceAndLockStatus() {
+            if (STATE.role === 'worker' && STATE.activeTask && STATE.currentLat && STATE.currentLng) {
+                const dist = calculateHaversineDistance(
+                    STATE.currentLat, STATE.currentLng,
+                    STATE.activeTask.inspectorLat, STATE.activeTask.inspectorLng
+                );
+                STATE.currentDistance = dist;
+                document.getElementById('displayDistance').textContent = `${dist.toFixed(1)} میٹر`;
+                document.getElementById('cameraProximityBadge').classList.remove('hidden');
+                document.getElementById('proxIndicatorText').textContent = `فاصلہ: ${dist.toFixed(1)}m`;
+
+                const btn = document.getElementById('btnWorkerCaptureTrigger');
+                if (dist <= MAX_ALLOWED_DISTANCE_METERS) {
+                    document.getElementById('proximityLockWarning').classList.add('hidden');
+                    document.getElementById('proxIndicatorDot').className = "w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse";
+                    btn.disabled = false;
+                    btn.className = "cursor-pointer bg-punjab-green hover:bg-punjab-dark text-white font-bold py-3 px-6 rounded-xl shadow inline-flex items-center gap-2 text-xs";
+                    btn.innerHTML = `<i class="fa-solid fa-camera"></i> تصویر (User 2 - بعد صفائی) کھینچیں (${dist.toFixed(1)}m)`;
+                } else {
+                    document.getElementById('proximityLockWarning').classList.remove('hidden');
+                    document.getElementById('currentDistText').textContent = dist.toFixed(1);
+                    document.getElementById('proxIndicatorDot').className = "w-2.5 h-2.5 rounded-full bg-red-500";
+                    btn.disabled = true;
+                    btn.className = "cursor-not-allowed bg-gray-300 text-gray-500 font-bold py-3 px-6 rounded-xl shadow inline-flex items-center gap-2 text-xs";
+                    btn.innerHTML = `<i class="fa-solid fa-lock"></i> کیمرہ لاک ہے (${dist.toFixed(1)}m دور)`;
+                }
+            } else {
+                document.getElementById('displayDistance').textContent = "-- میٹر";
+                document.getElementById('cameraProximityBadge').classList.add('hidden');
+                document.getElementById('proximityLockWarning').classList.add('hidden');
+            }
+        }
+
+        document.getElementById('btnWorkerCaptureTrigger').addEventListener('click', () => {
+            if (!document.getElementById('btnWorkerCaptureTrigger').disabled) {
+                document.getElementById('workerFileCapture').click();
+            } else {
+                showAlert("error", `آپ ابھی بھی ${STATE.currentDistance ? STATE.currentDistance.toFixed(1) : '--'} میٹر دور ہیں۔`);
+            }
+        });
+
+        // User 1 Capture
+        document.getElementById('inspectorFileCapture').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const userName = document.getElementById('inputUserName').value.trim();
+            if (!userName || !STATE.currentLat) {
+                showAlert("error", "نام درج کریں اور GPS لوکیشن کا انتظار کریں!");
+                e.target.value = '';
+                return;
+            }
+
+            processAndWatermarkPhoto(file, "قبل صفائی (User 1)", userName, (watermarkedDataUrl, taskId) => {
+                const newTask = {
+                    taskId: taskId,
+                    inspectorName: userName,
+                    ward: document.getElementById('inputWard').value.trim() || 'UC-1',
+                    siteNotes: document.getElementById('inputSiteNotes').value.trim() || 'مین گلی',
+                    inspectorLat: STATE.currentLat,
+                    inspectorLng: STATE.currentLng,
+                    inspectorGps: `${STATE.currentLat.toFixed(6)}, ${STATE.currentLng.toFixed(6)}`,
+                    beforeImage: watermarkedDataUrl,
+                    afterImage: null,
+                    workerName: '--',
+                    workerGps: '--',
+                    distanceMargin: '--',
+                    timestamp: new Date().toLocaleString('ur-PK'),
+                    status: 'pending'
+                };
+                STATE.tasks.push(newTask);
+                saveTasksDB();
+
+                document.getElementById('inspectorImgContainer').innerHTML = `<img src="${watermarkedDataUrl}" class="w-full h-full object-cover rounded-xl" />`;
+                document.getElementById('lblGeneratedCode').textContent = taskId;
+                document.getElementById('generatedTaskBox').classList.remove('hidden');
+                showAlert("success", `ٹاسک ${taskId} کامیابی سے بن گیا!`);
+                syncToGoogleDrive(newTask);
+            });
+            e.target.value = '';
+        });
+
+        // User 2 Capture
+        document.getElementById('workerFileCapture').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file || !STATE.activeTask) return;
+            const workerName = document.getElementById('inputUserName').value.trim();
+            if (!workerName) {
+                showAlert("error", "عملہ کا نام درج کریں!");
+                e.target.value = '';
+                return;
+            }
+            if (!STATE.currentLat || !STATE.currentLng) {
+                showAlert("error", "GPS لوکیشن دستیاب نہیں ہے!");
+                e.target.value = '';
+                return;
+            }
+
+            // تصویر کے وقت فاصلہ دوبارہ چیک
+            const task = STATE.activeTask;
+            const d = calculateHaversineDistance(
+                STATE.currentLat, STATE.currentLng,
+                task.inspectorLat, task.inspectorLng
+            );
+            if (d > MAX_ALLOWED_DISTANCE_METERS) {
+                showAlert("error", `آپ ${d.toFixed(1)} میٹر دور ہیں۔ 2 میٹر کے اندر جا کر دوبارہ تصویر لیں۔`);
+                e.target.value = '';
+                return;
+            }
+            STATE.currentDistance = d;
+            const workerLat = STATE.currentLat;
+            const workerLng = STATE.currentLng;
+
+            processAndWatermarkPhoto(file, "بعد صفائی (User 2)", workerName, (watermarkedDataUrl) => {
+                task.afterImage = watermarkedDataUrl;
+                task.workerName = workerName;
+                task.workerGps = `${workerLat.toFixed(6)}, ${workerLng.toFixed(6)}`;
+                task.distanceMargin = `${d.toFixed(1)}m`;
+                task.status = 'completed';
+                saveTasksDB();
+
+                document.getElementById('workerImgContainer').innerHTML = `<img src="${watermarkedDataUrl}" class="w-full h-full object-cover rounded-xl" />`;
+                showAlert("success", `ٹاسک ${task.taskId} کامیابی سے وریفائی ہو گیا!`);
+                syncToGoogleDrive(task);
+                renderPendingTasksDropdown();
+                renderTableLogs();
+            }, task.taskId);
+            e.target.value = '';
+        });
+
+        function processAndWatermarkPhoto(file, stageLabel, personName, callback, fixedTaskId) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width > 1280 ? 1280 : img.width;
+                    canvas.height = img.height > 720 ? 720 : img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    const barHeight = 120;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+                    ctx.fillStyle = stageLabel.includes('قبل') ? '#2563eb' : '#006837';
+                    ctx.fillRect(0, canvas.height - barHeight, canvas.width, 6);
+
+                    // بعد والی تصویر پر وہی ٹاسک ID جو قبل والی کا ہے
+                    const taskId = fixedTaskId || ('SP-' + Math.floor(1000 + Math.random() * 9000));
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 24px sans-serif';
+                    ctx.fillText(`ستھرا پنجاب - ${stageLabel} [${taskId}]`, 20, canvas.height - barHeight + 35);
+                    ctx.font = '18px sans-serif';
+                    ctx.fillStyle = '#e2e8f0';
+                    ctx.fillText(`نام: ${personName} | GPS: ${STATE.currentLat.toFixed(6)}, ${STATE.currentLng.toFixed(6)}`, 20, canvas.height - barHeight + 70);
+                    ctx.fillText(`وقت: ${new Date().toLocaleString('en-US')}`, 20, canvas.height - barHeight + 100);
+
+                    callback(canvas.toDataURL('image/jpeg', 0.85), taskId);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderPendingTasksDropdown() {
+            const select = document.getElementById('selectPendingTask');
+            const pending = STATE.tasks.filter(t => t.status === 'pending');
+            select.innerHTML = '<option value="">-- ٹاسک منتخب کریں --</option>';
+            pending.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.taskId;
+                opt.textContent = `${t.taskId} - ${t.siteNotes} (${t.inspectorName})`;
+                select.appendChild(opt);
+            });
+        }
+
+        document.getElementById('selectPendingTask').addEventListener('change', (e) => loadTaskDetails(e.target.value));
+        document.getElementById('btnLoadManualTask').addEventListener('click', () => loadTaskDetails(document.getElementById('inputManualTaskCode').value.trim().toUpperCase()));
+        document.getElementById('btnRefreshTasks').addEventListener('click', () => { renderPendingTasksDropdown(); showAlert("success", "ٹاسک لسٹ ریفریش ہو گئی"); });
+
+        function loadTaskDetails(taskId) {
+            const task = STATE.tasks.find(t => t.taskId === taskId);
+            if (!task) {
+                showAlert("error", "ٹاسک نہیں ملا!");
+                document.getElementById('activeTaskDetailsBox').classList.add('hidden');
+                STATE.activeTask = null;
+                return;
+            }
+            STATE.activeTask = task;
+            document.getElementById('activeTaskIdTag').textContent = `ٹاسک ID: ${task.taskId}`;
+            document.getElementById('activeTaskInspectorTag').textContent = `انسپکٹر: ${task.inspectorName}`;
+            document.getElementById('activeTaskLocationTag').textContent = `${task.ward} - ${task.siteNotes}`;
+            document.getElementById('activeTaskGPSTag').textContent = task.inspectorGps;
+            document.getElementById('activeTaskBeforeThumb').src = task.beforeImage;
+            document.getElementById('activeTaskTimeTag').textContent = `وقت: ${task.timestamp}`;
+            document.getElementById('activeTaskDetailsBox').classList.remove('hidden');
+            document.getElementById('inspectorImgContainer').innerHTML = `<img src="${task.beforeImage}" class="w-full h-full object-cover rounded-xl" />`;
+            updateDistanceAndLockStatus();
+            showAlert("success", `ٹاسک ${task.taskId} لوڈ ہو گیا۔`);
+        }
+
+        function syncToGoogleDrive(taskData) {
+            if (!STATE.driveScriptUrl) return;
+            fetch(STATE.driveScriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(taskData)
+            }).catch(() => {});
+        }
+
+        function renderTableLogs() {
+            const tbody = document.getElementById('logsTableBody');
+            if (!STATE.tasks.length) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-gray-400">کوئی ریکارڈ نہیں ملا</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = '';
+            STATE.tasks.slice().reverse().forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 border-b";
+                const isDone = t.status === 'completed';
+                tr.innerHTML = `
+                    <td class="p-2.5 font-mono font-bold text-blue-700">${t.taskId}</td>
+                    <td class="p-2.5">${t.inspectorName}</td>
+                    <td class="p-2.5">${t.workerName}</td>
+                    <td class="p-2.5 text-gray-600">${t.ward} / ${t.siteNotes}</td>
+                    <td class="p-2.5 text-center font-mono font-bold text-blue-600">${t.distanceMargin}</td>
+                    <td class="p-2.5 text-center"><img src="${t.beforeImage}" class="w-10 h-8 object-cover rounded mx-auto border" /></td>
+                    <td class="p-2.5 text-center">${t.afterImage ? `<img src="${t.afterImage}" class="w-10 h-8 object-cover rounded mx-auto border" />` : '--'}</td>
+                    <td class="p-2.5 text-center">${isDone ? '<span class="bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-full font-bold">مکمل</span>' : '<span class="bg-yellow-100 text-yellow-800 text-[10px] px-2 py-0.5 rounded-full font-bold">زیر التواء</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function saveTasksDB() {
+            try {
+                localStorage.setItem('sp_tasks_db', JSON.stringify(STATE.tasks));
+            } catch (err) {
+                showAlert("error", "میموری بھر گئی ہے۔ پرانا ڈیٹا CSV میں محفوظ کر کے صاف کریں۔");
+            }
+            renderTableLogs();
+        }
+
+        document.getElementById('btnExportCSV').addEventListener('click', () => {
+            if (!STATE.tasks.length) { showAlert("error", "کوئی ڈیٹا نہیں!"); return; }
+            let csvStr = "Task ID,Inspector,Worker,Ward,Site,Inspector GPS,Worker GPS,Distance,Status,Timestamp\n";
+            STATE.tasks.forEach(t => {
+                csvStr += `"${t.taskId}","${t.inspectorName}","${t.workerName}","${t.ward}","${t.siteNotes}","${t.inspectorGps}","${t.workerGps}","${t.distanceMargin}","${t.status}","${t.timestamp}"\n`;
+            });
+            const blob = new Blob(["\ufeff" + csvStr], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `Suthra_Punjab_Report.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        document.getElementById('btnClearHistory').addEventListener('click', () => {
+            if (confirm("تمام ہسٹری ڈیلیٹ کریں؟")) {
+                STATE.tasks = [];
+                localStorage.removeItem('sp_tasks_db');
+                renderTableLogs();
+                renderPendingTasksDropdown();
+            }
+        });
+
+        function showAlert(type, msg) {
+            const box = document.getElementById('alertBox');
+            box.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800');
+            if (type === 'error') {
+                box.classList.add('bg-red-100', 'text-red-800');
+                document.getElementById('alertIcon').className = "fa-solid fa-circle-exclamation text-xl text-red-600";
+            } else {
+                box.classList.add('bg-green-100', 'text-green-800');
+                document.getElementById('alertIcon').className = "fa-solid fa-circle-check text-xl text-green-600";
+            }
+            document.getElementById('alertMessage').textContent = msg;
+            clearTimeout(showAlert._t);
+            showAlert._t = setTimeout(() => box.classList.add('hidden'), 5000);
+        }
+
+        // Modal triggers
+        document.getElementById('btnOpenDriveSetup').addEventListener('click', () => document.getElementById('driveSetupModal').classList.remove('hidden'));
+        document.getElementById('btnCloseDriveSetup').addEventListener('click', () => document.getElementById('driveSetupModal').classList.add('hidden'));
+        document.getElementById('btnSaveDriveSetup').addEventListener('click', () => {
+            STATE.driveScriptUrl = document.getElementById('inputDriveApiUrl').value.trim();
+            localStorage.setItem('sp_drive_script_url', STATE.driveScriptUrl);
+            document.getElementById('driveSetupModal').classList.add('hidden');
+            showAlert("success", "گوگل ڈرائیو URL محفوظ ہو گیا!");
+        });
+    </script>
+</body>
+</html>
